@@ -1,4 +1,4 @@
-# 💬 Chat App
+# 💬 Quick Chat : Chat App
 
 A simple real-time chat application that allows users to send and receive messages instantly.  
 Built with **[Your Tech Stack — e.g., Node.js, Express, Socket.IO, React, etc.]** for fast and seamless communication.
