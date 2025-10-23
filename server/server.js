@@ -59,13 +59,19 @@ app.use("/api/messages", messageRouter);
 // CONNECT TO MONGODB (DEMO-SAFE)
 // ==============================
 async function startServer() {
-  try {
-    await connectDB();
-    console.log("✅ Connected to MongoDB");
-  } catch (err) {
-    console.warn(
-      "⚠️ MongoDB connection failed. Running in demo mode... You can still use the server!"
-    );
+  const isDemo = process.env.DEMO_MODE === "true";
+
+  if (isDemo) {
+    console.log("⚠️ DEMO MODE ACTIVE: skipping MongoDB connection.");
+  } else {
+    try {
+      await connectDB();
+      console.log("✅ Connected to MongoDB");
+    } catch (err) {
+      console.warn(
+        "⚠️ MongoDB connection failed. Running in demo mode..."
+      );
+    }
   }
 
   const PORT = process.env.PORT || 5000;
@@ -75,3 +81,4 @@ async function startServer() {
 }
 
 startServer();
+
