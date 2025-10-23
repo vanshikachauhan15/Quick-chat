@@ -1,11 +1,11 @@
 import mongoose from "mongoose";
 
-// function to connect to the mongodb database
+// function to connect to the MongoDB database
 export const connectDB = async () => {
   try {
     if (process.env.DEMO_MODE === "true") {
       console.log("⚠️ Demo mode active: skipping MongoDB connection.");
-      return; // skip actual DB connection
+      return; // skip DB connection
     }
 
     mongoose.connection.on("connected", () => {
@@ -22,6 +22,7 @@ export const connectDB = async () => {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
+    console.log("✅ Connected to MongoDB");
   } catch (error) {
     console.log("❌ MongoDB connection error:", error.message);
   }
