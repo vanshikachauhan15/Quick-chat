@@ -8,49 +8,70 @@ import messageRouter from "./routes/messageRoutes.js";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 
-//create express app and http server
+// ==============================
+// CREATE EXPRESS APP AND HTTP SERVER
+// ==============================
 const app = express();
 const server = http.createServer(app);
 
-//initialize socket.io server
+// ==============================
+// INITIALIZE SOCKET.IO SERVER
+// ==============================
 export const io = new Server(server, {
   cors: { origin: "*" },
 });
 
-//store online users
-export const userSocketMap = {}; //{userId:socketId}
+// STORE ONLINE USERS
+export const userSocketMap = {}; // {userId: socketId}
 
-//socket.io connection handler
+// SOCKET.IO CONNECTION HANDLER
 io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId;
   console.log("User connected", userId);
   if (userId) userSocketMap[userId] = socket.id;
 
-  //emit online users to all connected clients
+  // EMIT ONLINE USERS TO ALL CONNECTED CLIENTS
   io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
   socket.on("disconnect", () => {
-    console.log("Usr Disconnected", userId);
+    console.log("User Disconnected", userId);
     delete userSocketMap[userId];
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
   });
 });
 
-//middleware setup
+// ==============================
+// MIDDLEWARE SETUP
+// ==============================
 app.use(express.json({ limit: "4mb" }));
 app.use(cors());
 
-//routes setup
+// ==============================
+// ROUTES SETUP
+// ==============================
 app.use("/api/status", (req, res) => {
-  res.send("Server is live");
+  res.send("Server is live (demo mode if DB not connected)");
 });
 app.use("/api/auth", userRouter);
 app.use("/api/messages", messageRouter);
 
-//connect to mongodb
-await connectDB();
+// ==============================
+// CONNECT TO MONGODB (DEMO-SAFE)
+// ==============================
+async function startServer() {
+  try {
+    await connectDB();
+    console.log("✅ Connected to MongoDB");
+  } catch (err) {
+    console.warn(
+      "⚠️ MongoDB connection failed. Running in demo mode... You can still use the server!"
+    );
+  }
 
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log("Server is running on PORT: " + PORT);
-});
+  const PORT = process.env.PORT || 5000;
+  server.listen(PORT, () => {
+    console.log(`Server is running on PORT: ${PORT}`);
+  });
+}
+
+startServer();
