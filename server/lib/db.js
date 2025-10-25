@@ -1,16 +1,11 @@
 import mongoose from "mongoose";
 
-// function to connect to the MongoDB database
 export const connectDB = async () => {
   try {
     if (process.env.DEMO_MODE === "true") {
       console.log("⚠️ Demo mode active: skipping MongoDB connection.");
-      return; // skip DB connection
+      return;
     }
-
-    mongoose.connection.on("connected", () => {
-      console.log("✅ Database connected");
-    });
 
     const mongoUri = process.env.MONGODB_URI;
     if (!mongoUri) {
@@ -22,8 +17,9 @@ export const connectDB = async () => {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
-    console.log("✅ Connected to MongoDB");
-  } catch (error) {
-    console.log("❌ MongoDB connection error:", error.message);
+
+    mongoose.connection.on("connected", () => console.log("✅ Database connected"));
+  } catch (err) {
+    console.log("❌ MongoDB connection error:", err.message);
   }
 };
