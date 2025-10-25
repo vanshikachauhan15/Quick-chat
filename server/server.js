@@ -2,11 +2,20 @@ import express from "express";
 import "dotenv/config";
 import cors from "cors";
 import http from "http";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import { connectDB } from "./lib/db.js";
 import userRouter from "./routes/userRoutes.js";
 import messageRouter from "./routes/messageRoutes.js";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
+
+// ==============================
+// FILE PATHS (ES Module fix)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const clientBuildPath = path.join(__dirname, "../client/dist");
 
 // ==============================
 // CREATE EXPRESS APP AND HTTP SERVER
@@ -56,7 +65,23 @@ app.use("/api/auth", userRouter);
 app.use("/api/messages", messageRouter);
 
 // ==============================
-// CONNECT TO MONGODB (DEMO-SAFE)
+// SERVE REACT FRONTEND
+// ==============================
+if (fs.existsSync(clientBuildPath)) {
+  console.log("✅ React build found, serving frontend...");
+
+  app.use(express.static(clientBuildPath));
+
+  // Any unknown route serves index.html
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(clientBuildPath, "index.html"));
+  });
+} else {
+  console.log("⚠️ No React build found in client/dist, skipping frontend serving.");
+}
+
+// ==============================
+// CONNECT TO MONGODB (DEMO-SAFE) & START SERVER
 // ==============================
 async function startServer() {
   const isDemo = process.env.DEMO_MODE === "true";
@@ -68,9 +93,7 @@ async function startServer() {
       await connectDB();
       console.log("✅ Connected to MongoDB");
     } catch (err) {
-      console.warn(
-        "⚠️ MongoDB connection failed. Running in demo mode..."
-      );
+      console.warn("⚠️ MongoDB connection failed. Running in demo mode...");
     }
   }
 
