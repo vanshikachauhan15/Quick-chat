@@ -9,7 +9,6 @@ import { connectDB } from "./lib/db.js";
 import userRouter from "./routes/userRoutes.js";
 import messageRouter from "./routes/messageRoutes.js";
 import { Server } from "socket.io";
-import jwt from "jsonwebtoken";
 
 // ==============================
 // FILE PATHS (ES Module fix)
@@ -19,27 +18,19 @@ const clientBuildPath = path.join(__dirname, "../client/dist");
 
 // ==============================
 // CREATE EXPRESS APP AND HTTP SERVER
-// ==============================
 const app = express();
 const server = http.createServer(app);
 
 // ==============================
 // INITIALIZE SOCKET.IO SERVER
-// ==============================
-export const io = new Server(server, {
-  cors: { origin: "*" },
-});
-
-// STORE ONLINE USERS
+export const io = new Server(server, { cors: { origin: "*" } });
 export const userSocketMap = {}; // {userId: socketId}
 
-// SOCKET.IO CONNECTION HANDLER
 io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId;
   console.log("User connected", userId);
   if (userId) userSocketMap[userId] = socket.id;
 
-  // EMIT ONLINE USERS TO ALL CONNECTED CLIENTS
   io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
   socket.on("disconnect", () => {
@@ -50,14 +41,12 @@ io.on("connection", (socket) => {
 });
 
 // ==============================
-// MIDDLEWARE SETUP
-// ==============================
+// MIDDLEWARE
 app.use(express.json({ limit: "4mb" }));
 app.use(cors());
 
 // ==============================
-// ROUTES SETUP
-// ==============================
+// API ROUTES
 app.use("/api/status", (req, res) => {
   res.send("Server is live (demo mode if DB not connected)");
 });
@@ -66,13 +55,12 @@ app.use("/api/messages", messageRouter);
 
 // ==============================
 // SERVE REACT FRONTEND
-// ==============================
 if (fs.existsSync(clientBuildPath)) {
   console.log("✅ React build found, serving frontend...");
 
   app.use(express.static(clientBuildPath));
 
-  // Any unknown route serves index.html
+  // Safe catch-all: any unknown route serves index.html
   app.get("*", (req, res) => {
     res.sendFile(path.join(clientBuildPath, "index.html"));
   });
@@ -81,8 +69,17 @@ if (fs.existsSync(clientBuildPath)) {
 }
 
 // ==============================
-// CONNECT TO MONGODB (DEMO-SAFE) & START SERVER
+// SAFE CATCH FOR INVALID ROUTES
+app.use((req, res, next) => {
+  if (req.path.startsWith("http") || req.path.includes("://")) {
+    console.warn("Invalid route path detected:", req.path);
+    return res.status(400).send("Bad route path.");
+  }
+  next();
+});
+
 // ==============================
+// CONNECT TO MONGODB (DEMO-SAFE) & START SERVER
 async function startServer() {
   const isDemo = process.env.DEMO_MODE === "true";
 
@@ -97,11 +94,10 @@ async function startServer() {
     }
   }
 
-  const PORT = process.env.PORT || 3000;
+  const PORT = process.env.PORT || 5001;
   server.listen(PORT, () => {
     console.log(`Server is running on PORT: ${PORT}`);
   });
 }
 
 startServer();
-
