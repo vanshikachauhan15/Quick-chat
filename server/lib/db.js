@@ -7,6 +7,10 @@ export const connectDB = async () => {
       return;
     }
 
+    mongoose.connection.on("connected", () => {
+      console.log("✅ Database connected");
+    });
+
     const mongoUri = process.env.MONGODB_URI;
     if (!mongoUri) {
       console.log("⚠️ MONGODB_URI not set. Skipping DB connection.");
@@ -17,9 +21,8 @@ export const connectDB = async () => {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
-
-    mongoose.connection.on("connected", () => console.log("✅ Database connected"));
-  } catch (err) {
-    console.log("❌ MongoDB connection error:", err.message);
+    console.log("✅ Connected to MongoDB");
+  } catch (error) {
+    console.log("❌ MongoDB connection error:", error.message);
   }
 };
