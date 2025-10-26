@@ -48,16 +48,22 @@ app.use(cors());
 
 // ==============================
 // ROUTES
-app.use("/api/status", (req, res) => res.send("Server is live (demo mode if DB not connected)"));
+app.use("/api/status", (req, res) =>
+  res.send("Server is live (demo mode if DB not connected)")
+);
 app.use("/api/auth", userRouter);
 app.use("/api/messages", messageRouter);
 
 // ==============================
-// SERVE REACT FRONTEND
+// SERVE REACT FRONTEND (FIXED for Node 23+)
 if (fs.existsSync(clientBuildPath)) {
   console.log("✅ React build found, serving frontend...");
   app.use(express.static(clientBuildPath));
-  app.get("*", (req, res) => res.sendFile(path.join(clientBuildPath, "index.html")));
+
+  // 🧠 FIXED: replaced `app.get("*")` with safer catch-all
+  app.use((req, res) => {
+    res.sendFile(path.join(clientBuildPath, "index.html"));
+  });
 } else {
   console.log("⚠️ No React build found in client/dist, skipping frontend serving.");
 }
