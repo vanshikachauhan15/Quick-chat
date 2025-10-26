@@ -13,7 +13,7 @@ import { Server } from "socket.io";
 // ==============================
 // FILE PATHS
 const __filename = fileURLToPath(import.meta.url);
-const _dirname = path.dirname(_filename);
+const __dirname = path.dirname(__filename);
 const clientBuildPath = path.join(__dirname, "../client/dist");
 
 // ==============================
@@ -55,35 +55,44 @@ app.use("/api/auth", userRouter);
 app.use("/api/messages", messageRouter);
 
 // ==============================
-// SERVE REACT FRONTEND (FIXED for Node 23+)
+// SERVE REACT FRONTEND
 if (fs.existsSync(clientBuildPath)) {
   console.log("✅ React build found, serving frontend...");
   app.use(express.static(clientBuildPath));
 
-  // 🧠 FIXED: replaced app.get("*") with safer catch-all
+  // Catch-all route to serve React index.html
   app.use((req, res) => {
     res.sendFile(path.join(clientBuildPath, "index.html"));
   });
 } else {
-  console.log("⚠️ No React build found in client/dist, skipping frontend serving.");
+  console.log(
+    "⚠️ No React build found in client/dist, skipping frontend serving."
+  );
 }
 
 // ==============================
 // CONNECT DB AND START SERVER
 async function startServer() {
   if (process.env.DEMO_MODE === "true") {
-    console.log("⚠️ DEMO MODE ACTIVE: skipping MongoDB connection.");
+    console.log(
+      "⚠️ DEMO MODE ACTIVE: skipping MongoDB connection."
+    );
   } else {
     try {
       await connectDB();
       console.log("✅ Connected to MongoDB");
     } catch (err) {
-      console.warn("⚠️ MongoDB connection failed. Running in demo mode...");
+      console.warn(
+        "⚠️ MongoDB connection failed. Running in demo mode..."
+      );
     }
   }
 
   const PORT = process.env.PORT || 5001;
-  server.listen(PORT, () => console.log(Server running on PORT: ${PORT}));
+  server.listen(PORT, () =>
+    console.log(`Server running on PORT: ${PORT}`)
+  );
 }
 
 startServer();
+
