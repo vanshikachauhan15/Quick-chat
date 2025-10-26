@@ -10,16 +10,21 @@ import userRouter from "./routes/userRoutes.js";
 import messageRouter from "./routes/messageRoutes.js";
 import { Server } from "socket.io";
 
+// ==============================
+// FILE PATHS
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const clientBuildPath = path.join(__dirname, "../client/dist");
 
+// ==============================
+// EXPRESS APP + HTTP SERVER
 const app = express();
 const server = http.createServer(app);
 
-// ================= SOCKET.IO =================
+// ==============================
+// SOCKET.IO SETUP
 export const io = new Server(server, { cors: { origin: "*" } });
-export const userSocketMap = {}; // { userId: socketId }
+export const userSocketMap = {}; // {userId: socketId}
 
 io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId;
@@ -35,43 +40,47 @@ io.on("connection", (socket) => {
   });
 });
 
-// ================= MIDDLEWARE =================
-app.use(express.json({ limit: "4mb" }));
+// ==============================
+// MIDDLEWARE
+app.use(express.json({ limit: "10mb" }));
 app.use(cors());
 
-// ================= ROUTES =================
+// ==============================
+// ROUTES
 app.use("/api/status", (req, res) =>
-  res.send("✅ Server is live (Demo mode active if DB off)")
+  res.send("Server is live (demo mode if DB not connected)")
 );
 app.use("/api/auth", userRouter);
 app.use("/api/messages", messageRouter);
 
-// ================= FRONTEND SERVE =================
+// ==============================
+// SERVE REACT FRONTEND
 if (fs.existsSync(clientBuildPath)) {
   console.log("✅ React build found, serving frontend...");
   app.use(express.static(clientBuildPath));
-  app.use((req, res) => {
+  app.get("*", (req, res) => {
     res.sendFile(path.join(clientBuildPath, "index.html"));
   });
 } else {
   console.log("⚠️ No React build found in client/dist, skipping frontend serving.");
 }
 
-// ================= START SERVER =================
+// ==============================
+// CONNECT DB AND START SERVER
 async function startServer() {
   if (process.env.DEMO_MODE === "true") {
-    console.log("⚠️ DEMO MODE ACTIVE — skipping MongoDB connection.");
+    console.log("⚠️ DEMO MODE ACTIVE: skipping MongoDB connection.");
   } else {
     try {
       await connectDB();
-      console.log("✅ Connected to MongoDB");
     } catch (err) {
       console.warn("⚠️ MongoDB connection failed. Running in demo mode...");
     }
   }
 
   const PORT = process.env.PORT || 5001;
-  server.listen(PORT, () => console.log(`🚀 Server running on PORT: ${PORT}`));
+  server.listen(PORT, () => console.log(`Server running on PORT: ${PORT}`));
 }
 
 startServer();
+
