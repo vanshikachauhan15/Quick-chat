@@ -7,9 +7,7 @@ export const connectDB = async () => {
       return;
     }
 
-    mongoose.connection.on("connected", () => {
-      console.log("✅ Database connected");
-    });
+    mongoose.connection.on("connected", () => console.log("✅ Database connected"));
 
     const mongoUri = process.env.MONGODB_URI;
     if (!mongoUri) {
@@ -21,7 +19,6 @@ export const connectDB = async () => {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
-    console.log("✅ Connected to MongoDB");
   } catch (error) {
     console.log("❌ MongoDB connection error:", error.message);
   }
