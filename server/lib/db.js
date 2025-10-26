@@ -18,10 +18,12 @@ export const connectDB = async () => {
       return;
     }
 
-    await mongoose.connect(${mongoUri}/chat-app, {
+    // ✅ Use backticks for template literal
+    await mongoose.connect(`${mongoUri}/chat-app`, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
+
     console.log("✅ Connected to MongoDB");
   } catch (error) {
     console.log("❌ MongoDB connection error:", error.message);
