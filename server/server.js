@@ -13,7 +13,7 @@ import { Server } from "socket.io";
 // ==============================
 // FILE PATHS
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const _dirname = path.dirname(_filename);
 const clientBuildPath = path.join(__dirname, "../client/dist");
 
 // ==============================
@@ -31,6 +31,7 @@ io.on("connection", (socket) => {
   console.log("User connected:", userId || "Unknown");
 
   if (userId) userSocketMap[userId] = socket.id;
+
   io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
   socket.on("disconnect", () => {
@@ -42,7 +43,7 @@ io.on("connection", (socket) => {
 
 // ==============================
 // MIDDLEWARE
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json({ limit: "4mb" }));
 app.use(cors());
 
 // ==============================
@@ -54,11 +55,13 @@ app.use("/api/auth", userRouter);
 app.use("/api/messages", messageRouter);
 
 // ==============================
-// SERVE REACT FRONTEND
+// SERVE REACT FRONTEND (FIXED for Node 23+)
 if (fs.existsSync(clientBuildPath)) {
   console.log("✅ React build found, serving frontend...");
   app.use(express.static(clientBuildPath));
-  app.get("*", (req, res) => {
+
+  // 🧠 FIXED: replaced app.get("*") with safer catch-all
+  app.use((req, res) => {
     res.sendFile(path.join(clientBuildPath, "index.html"));
   });
 } else {
@@ -73,14 +76,14 @@ async function startServer() {
   } else {
     try {
       await connectDB();
+      console.log("✅ Connected to MongoDB");
     } catch (err) {
       console.warn("⚠️ MongoDB connection failed. Running in demo mode...");
     }
   }
 
   const PORT = process.env.PORT || 5001;
-  server.listen(PORT, () => console.log(`Server running on PORT: ${PORT}`));
+  server.listen(PORT, () => console.log(Server running on PORT: ${PORT}));
 }
 
 startServer();
-
