@@ -1,93 +1,68 @@
 import express from "express";
-import "dotenv/config";
 import cors from "cors";
-import http from "http";
-import fs from "fs";
-import path, { resolve, dirname } from "path";
-import { fileURLToPath } from "url";
-import { connectDB } from "./lib/db.js";
-import userRouter from "./routes/userRoutes.js";
-import messageRouter from "./routes/messageRoutes.js";
+import dotenv from "dotenv";
+import mongoose from "mongoose";
 import { Server } from "socket.io";
+import http from "http";
+import path from "path";
+import { fileURLToPath } from "url";
 
-// ==============================
-// FILE PATHS
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const clientBuildPath = path.join(__dirname, "../client/dist");
+// load env variables
+dotenv.config();
 
-// ==============================
-// EXPRESS APP + HTTP SERVER
+// express app
 const app = express();
-const server = http.createServer(app);
-
-// ==============================
-// SOCKET.IO SETUP
-export const io = new Server(server, { cors: { origin: "*" } });
-export const userSocketMap = {}; // {userId: socketId}
-
-io.on("connection", (socket) => {
-  const userId = socket.handshake.query.userId;
-  console.log("⚡ User connected:", userId || "Unknown");
-
-  if (userId) userSocketMap[userId] = socket.id;
-  io.emit("getOnlineUsers", Object.keys(userSocketMap));
-
-  socket.on("disconnect", () => {
-    if (userId) delete userSocketMap[userId];
-    console.log("🚪 User disconnected:", userId || "Unknown");
-    io.emit("getOnlineUsers", Object.keys(userSocketMap));
-  });
-});
-
-// ==============================
-// MIDDLEWARE
-app.use(express.json({ limit: "4mb" }));
+app.use(express.json());
 app.use(cors());
 
-// ==============================
-// ROUTES
-app.use("/api/status", (req, res) => {
-  const demo = process.env.DEMO_MODE === "true";
-  res.send(
-    `Server is live 🚀 (Database: ${demo ? "Demo mode" : "Connected mode"})`
-  );
+// database connection
+mongoose
+  .connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => console.error("❌ MongoDB connection error:", err));
+
+// your API routes
+app.get("/api/test", (req, res) => {
+  res.json({ message: "Server is running fine 🚀" });
 });
 
-app.use("/api/auth", userRouter);
-app.use("/api/messages", messageRouter);
+// socket.io setup
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+  },
+});
 
-// ==============================
-// SERVE REACT FRONTEND SAFELY
-if (fs.existsSync(clientBuildPath)) {
-  console.log("✅ React build found, serving frontend...");
+io.on("connection", (socket) => {
+  console.log("⚡ User connected:", socket.id);
 
-  // Serve all static assets
-  app.use(express.static(clientBuildPath));
-
-  // Handle React Router fallback (avoid path-to-regexp crash)
-  app.all("/*", (req, res) => {
-    res.sendFile(resolve(clientBuildPath, "index.html"));
+  socket.on("sendMessage", (data) => {
+    io.emit("receiveMessage", data);
   });
-} else {
-  console.log("⚠️ No React build found in client/dist, skipping frontend serving.");
-}
 
-// ==============================
-// CONNECT DB AND START SERVER
-async function startServer() {
-  const PORT = process.env.PORT || 5001;
-
-  try {
-    await connectDB();
-  } catch (err) {
-    console.warn("⚠️ MongoDB connection failed. Running in demo mode...");
-  }
-
-  server.listen(PORT, () => {
-    console.log(`✅ Server running on PORT: ${PORT}`);
+  socket.on("disconnect", () => {
+    console.log("❌ User disconnected:", socket.id);
   });
-}
+});
 
-startServer();
+// serve frontend (for production build)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const clientPath = path.join(__dirname, "../client/dist");
+app.use(express.static(clientPath));
+
+// ✅ this route works fine in Express 4 & 5
+app.get("*", (req, res) => {
+  res.sendFile(path.join(clientPath, "index.html"));
+});
+
+// start server
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
 
