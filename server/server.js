@@ -61,10 +61,12 @@ app.use("/api/messages", messageRouter);
 // SERVE REACT FRONTEND
 if (fs.existsSync(clientBuildPath)) {
   console.log("✅ React build found, serving frontend...");
+
+  // Serve static files correctly
   app.use(express.static(clientBuildPath));
 
-  // Catch-all route to serve React index.html
-  app.use((req, res) => {
+  // Handle React Router routes and unknown paths
+  app.get("*", (req, res) => {
     res.sendFile(path.join(clientBuildPath, "index.html"));
   });
 } else {
@@ -88,3 +90,4 @@ async function startServer() {
 }
 
 startServer();
+
