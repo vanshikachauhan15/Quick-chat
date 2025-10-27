@@ -3,7 +3,7 @@ import "dotenv/config";
 import cors from "cors";
 import http from "http";
 import fs from "fs";
-import path from "path";
+import path, { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { connectDB } from "./lib/db.js";
 import userRouter from "./routes/userRoutes.js";
@@ -13,7 +13,7 @@ import { Server } from "socket.io";
 // ==============================
 // FILE PATHS
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = dirname(__filename);
 const clientBuildPath = path.join(__dirname, "../client/dist");
 
 // ==============================
@@ -58,16 +58,16 @@ app.use("/api/auth", userRouter);
 app.use("/api/messages", messageRouter);
 
 // ==============================
-// SERVE REACT FRONTEND
+// SERVE REACT FRONTEND SAFELY
 if (fs.existsSync(clientBuildPath)) {
   console.log("✅ React build found, serving frontend...");
 
-  // Serve static files correctly
+  // Serve all static assets
   app.use(express.static(clientBuildPath));
 
-  // Handle React Router routes and unknown paths
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(clientBuildPath, "index.html"));
+  // Handle React Router fallback (avoid path-to-regexp crash)
+  app.all("/*", (req, res) => {
+    res.sendFile(resolve(clientBuildPath, "index.html"));
   });
 } else {
   console.log("⚠️ No React build found in client/dist, skipping frontend serving.");
