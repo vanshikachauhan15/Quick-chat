@@ -1,6 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import assets from "../assets/assets";
-import { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 
 const LoginPage = () => {
@@ -13,28 +12,41 @@ const LoginPage = () => {
 
   const { login } = useContext(AuthContext);
 
-  const onSubmitHandler = (event) => {
-    event.preventDefault();
-    if (currState == "Sign up" && !isDataSubmitted) {
+  const onSubmitHandler = (e) => {
+    e.preventDefault();
+
+    // Step 1: if signing up and bio step not shown yet
+    if (currState === "Sign up" && !isDataSubmitted) {
+      if (!fullName || !email || !password) {
+        alert("Please fill all fields before continuing.");
+        return;
+      }
       setIsDataSubmitted(true);
       return;
     }
-    login(currState === "Sign up" ? "signup" : "login", {
-      fullName,
-      email,
-      password,
-      bio,
-    });
+
+    // Step 2: perform login/signup action
+    const userData = { fullName, email, password, bio };
+
+    login(currState === "Sign up" ? "signup" : "login", userData);
+
+    // reset only after submission
+    setFullName("");
+    setEmail("");
+    setPassword("");
+    setBio("");
+    setIsDataSubmitted(false);
   };
 
   return (
     <div className="min-h-screen bg-color bg-center flex items-center justify-center gap-8 sm:justify-evenly max-sm:flex-col backdrop-blur-2xl">
-      {/* ----------left---------*/}
-      <img src={assets.logo_big} alt="" className="w-[min(30vw,250px)]" />
-      {/*--------right--------- */}
+      {/* ----------left--------- */}
+      <img src={assets.logo_big} alt="App logo" className="w-[min(30vw,250px)]" />
+
+      {/* ---------right--------- */}
       <form
         onSubmit={onSubmitHandler}
-        className="border-2 bg-white/8 text-white border-gray-500 p-6 flex flex-col gap-6 rounded-lg shadow-lg"
+        className="border-2 bg-white/10 text-white border-gray-500 p-6 flex flex-col gap-6 rounded-lg shadow-lg"
       >
         <h2 className="font-medium text-2xl flex justify-between items-center">
           {currState}
@@ -42,12 +54,13 @@ const LoginPage = () => {
             <img
               onClick={() => setIsDataSubmitted(false)}
               src={assets.arrow_icon}
-              alt=""
+              alt="back"
               className="w-5 cursor-pointer"
             />
           )}
         </h2>
 
+        {/* Signup fields */}
         {currState === "Sign up" && !isDataSubmitted && (
           <input
             onChange={(e) => setFullName(e.target.value)}
@@ -59,6 +72,7 @@ const LoginPage = () => {
           />
         )}
 
+        {/* Common fields */}
         {!isDataSubmitted && (
           <>
             <input
@@ -80,49 +94,60 @@ const LoginPage = () => {
           </>
         )}
 
+        {/* Bio step */}
         {currState === "Sign up" && isDataSubmitted && (
           <textarea
             onChange={(e) => setBio(e.target.value)}
             value={bio}
             rows={4}
             className="p-2 border border-gray-500 rounded-md focus:outline-none focus:ring-indigo-500"
-            placeholder="provide a short bio...."
+            placeholder="Provide a short bio..."
             required
           ></textarea>
         )}
 
+        {/* Submit button */}
         <button
           type="submit"
-          className="py-3 bg-gradient-to-r from-purple-400 to-violet-600 text-white rounded-md cursor-pointer"
+          className="py-3 bg-gradient-to-r from-purple-400 to-violet-600 text-white rounded-md cursor-pointer hover:opacity-90 transition"
         >
-          {currState === "Sign up" ? "Create Account" : "Login Now"}
+          {currState === "Sign up"
+            ? isDataSubmitted
+              ? "Finish Sign Up"
+              : "Next Step"
+            : "Login Now"}
         </button>
 
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <input type="checkbox" />
+        {/* Terms checkbox */}
+        <div className="flex items-center gap-2 text-sm text-gray-300">
+          <input type="checkbox" required />
           <p>Agree to the terms of use & privacy policy</p>
         </div>
 
+        {/* Switch between login and signup */}
         <div className="flex flex-col gap-2">
           {currState === "Sign up" ? (
-            <p className="text-sm text-gray-600">
-              Already have an account?
+            <p className="text-sm text-gray-300">
+              Already have an account?{" "}
               <span
                 onClick={() => {
                   setCurrState("Login");
                   setIsDataSubmitted(false);
                 }}
-                className="font-medium text-violet-500 cursor-pointer"
+                className="font-medium text-violet-400 cursor-pointer"
               >
                 Login here
               </span>
             </p>
           ) : (
-            <p className="text-sm text-gray-600">
-              Create an account
+            <p className="text-sm text-gray-300">
+              Create an account{" "}
               <span
-                onClick={() => setCurrState("Sign up")}
-                className="font-medium text-violet-500 cursor-pointer"
+                onClick={() => {
+                  setCurrState("Sign up");
+                  setIsDataSubmitted(false);
+                }}
+                className="font-medium text-violet-400 cursor-pointer"
               >
                 Click here
               </span>
