@@ -34,7 +34,7 @@ export const connectDB = async () => {
       console.log("⚠️ MongoDB disconnected.");
     });
 
-    // Connect
+    // Connect to MongoDB
     await mongoose.connect(fullUri, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
@@ -44,9 +44,3 @@ export const connectDB = async () => {
   }
 };
 
-
-    console.log("✅ Connected to MongoDB");
-  } catch (error) {
-    console.log("❌ MongoDB connection error:", error.message);
-  }
-};
