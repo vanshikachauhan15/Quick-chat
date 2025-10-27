@@ -12,16 +12,14 @@ export const connectDB = async () => {
     const mongoUri = process.env.MONGODB_URI;
 
     if (!mongoUri) {
-      console.log("❌ MONGODB_URI not found in environment variables!");
+      console.error("❌ MONGODB_URI not found in environment variables!");
       return;
     }
 
-    // If the URI already includes a DB name, don't append /chat-app
-    const fullUri = mongoUri.includes(".net/")
-      ? mongoUri
-      : `${mongoUri}/chat-app`;
+    // ✅ Use the URI directly — don't modify
+    const fullUri = mongoUri;
 
-    // MongoDB connection event listeners
+    // Event listeners
     mongoose.connection.on("connected", () => {
       console.log("✅ Database connected successfully!");
     });
@@ -31,14 +29,12 @@ export const connectDB = async () => {
     });
 
     mongoose.connection.on("disconnected", () => {
-      console.log("⚠️ MongoDB disconnected.");
+      console.warn("⚠️ MongoDB disconnected.");
     });
 
-    // Connect to MongoDB
-    await mongoose.connect(fullUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    // ✅ Connect to MongoDB (no deprecated options)
+    await mongoose.connect(fullUri);
+
   } catch (error) {
     console.error("❌ Error connecting to MongoDB:", error.message);
   }
