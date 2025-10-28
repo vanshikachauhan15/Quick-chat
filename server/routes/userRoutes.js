@@ -14,15 +14,27 @@ userRouter.post("/signup", signup);
 userRouter.post("/login", login);
 userRouter.put("/update-profile", protectRoute, updateProfile);
 
-// ✅ Universal /check route (works in all modes)
+// ✅ Fixed: Universal /check route (works in all modes)
 userRouter.get("/check", async (req, res) => {
   try {
-    // Try to verify token (optional)
-    await protectRoute(req, res, () => {});
-    await checkAuth(req, res);
+    // Try to verify token safely
+    await new Promise((resolve, reject) => {
+      protectRoute(req, res, (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
+    // Token valid → check auth
+    return checkAuth(req, res);
   } catch (err) {
-    // No token or invalid -> send safe fallback
-    res.json({ status: "ok", message: "No auth, but server is up ✅" });
+    // Token invalid → just send single response
+    if (!res.headersSent) {
+      return res.json({
+        status: "ok",
+        message: "No auth, but server is up ✅",
+      });
+    }
   }
 });
 
