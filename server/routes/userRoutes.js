@@ -14,37 +14,18 @@ userRouter.post("/signup", signup);
 userRouter.post("/login", login);
 userRouter.put("/update-profile", protectRoute, updateProfile);
 
-// ✅ Health & Auth Check Route
-// Always works — even in demo mode or without a token
+// ✅ Universal /check route (works in all modes)
 userRouter.get("/check", async (req, res) => {
   try {
-    // If authorization header is present, verify token
-    if (req.headers.authorization) {
-      // Wrap protectRoute properly so Express flow doesn’t break
-      await new Promise((resolve) => {
-        protectRoute(req, res, async () => {
-          await checkAuth(req, res);
-          resolve();
-        });
-      });
-    } else {
-      // No token — just confirm backend is live
-      res.status(200).json({
-        success: true,
-        message: "Server active (unauthenticated ✅)",
-      });
-    }
+    // Try to verify token (optional)
+    await protectRoute(req, res, () => {});
+    await checkAuth(req, res);
   } catch (err) {
-    // Catch any token errors but still confirm server is up
-    res.status(200).json({
-      success: false,
-      message: "Server active but auth check failed ⚠️",
-      error: err.message || err,
-    });
+    // No token or invalid -> send safe fallback
+    res.json({ status: "ok", message: "No auth, but server is up ✅" });
   }
 });
 
 export default userRouter;
-
 
 export default userRouter;
