@@ -49,14 +49,14 @@ const io = new Server(server, {
   cors: {
     origin: process.env.CLIENT_URL || "http://localhost:5173",
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
-// 🧩 Track which socket belongs to which user
 const userSocketMap = new Map(); // userId → socket.id
 
 io.on("connection", (socket) => {
-  console.log("🟢 New client connected:", socket.id);
+  console.log("🟢 Client connected:", socket.id);
 
   const userId = socket.handshake.query.userId;
   if (userId) {
@@ -64,33 +64,27 @@ io.on("connection", (socket) => {
     io.emit("getOnlineUsers", Array.from(userSocketMap.keys()));
   }
 
-  // ✅ Handle new message
   socket.on("newMessage", (message) => {
+    if (!message?.receiverId) return;
     const receiverSocketId = userSocketMap.get(message.receiverId);
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("newMessage", message);
     }
   });
 
-  // ✅ Handle disconnection
   socket.on("disconnect", () => {
-    console.log("🔴 Client disconnected:", socket.id);
-    for (const [id, sockId] of userSocketMap.entries()) {
-      if (sockId === socket.id) {
-        userSocketMap.delete(id);
-        break;
-      }
-    }
+    console.log("🔴 Disconnected:", socket.id);
+    const userEntry = [...userSocketMap.entries()].find(
+      ([, sockId]) => sockId === socket.id
+    );
+    if (userEntry) userSocketMap.delete(userEntry[0]);
     io.emit("getOnlineUsers", Array.from(userSocketMap.keys()));
   });
 });
 
-// ✅ Start server
 const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
 });
 
-// ✅ Export for other modules
 export { io, userSocketMap };
-
