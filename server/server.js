@@ -20,6 +20,7 @@ app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:5173",
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"], // ✅ added
   })
 );
 
@@ -34,6 +35,12 @@ if (process.env.DEMO_MODE !== "true") {
 app.use("/api/auth", userRouter);
 app.use("/api/messages", messageRouter);
 
+// ✅ Test Route
+app.get("/api/test", (req, res) => {
+  res.json({ success: true, message: "Backend is live!" });
+});
+
+// ✅ Root route
 app.get("/", (req, res) => {
   res.send("🚀 Server is running successfully!");
 });
@@ -51,6 +58,7 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
     credentials: true,
   },
+  pingTimeout: 60000, // ✅ helps maintain stable socket connections
 });
 
 const userSocketMap = new Map(); // userId → socket.id
@@ -88,3 +96,4 @@ server.listen(PORT, () => {
 });
 
 export { io, userSocketMap };
+
