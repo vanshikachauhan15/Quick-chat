@@ -16,16 +16,15 @@ export const AuthProvider = ({ children }) => {
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [socket, setSocket] = useState(null);
 
-  // ✅ Connect socket
   const connectSocket = (userData) => {
     if (!userData || socket?.connected) return;
 
     const newSocket = io(backendUrl, {
       query: { userId: userData._id },
-      transports: ["websocket"], // 💡 important for deployment (no polling)
+      transports: ["websocket"],
     });
 
-    newSocket.on("connect", () => console.log("⚡ Socket connected"));
+    newSocket.on("connect", () => console.log("⚡ Socket connected to", backendUrl));
     newSocket.on("disconnect", () => console.log("🔌 Socket disconnected"));
 
     newSocket.on("getOnlineUsers", (userIds) => {
@@ -35,7 +34,6 @@ export const AuthProvider = ({ children }) => {
     setSocket(newSocket);
   };
 
-  // ✅ Check if user is authenticated
   const checkAuth = async () => {
     try {
       const { data } = await axios.get("/api/auth/check");
@@ -50,7 +48,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // ✅ Login function
   const login = async (state, credentials) => {
     try {
       const { data } = await axios.post(`/api/auth/${state}`, credentials);
@@ -69,7 +66,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // ✅ Logout
   const logout = () => {
     localStorage.removeItem("token");
     setToken(null);
@@ -80,7 +76,6 @@ export const AuthProvider = ({ children }) => {
     toast.success("Logged out successfully");
   };
 
-  // ✅ Update profile
   const updateProfile = async (body) => {
     try {
       const { data } = await axios.put("/api/auth/update-profile", body);
@@ -112,5 +107,4 @@ export const AuthProvider = ({ children }) => {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
-
 
